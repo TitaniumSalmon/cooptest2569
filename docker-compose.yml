@@ -1,0 +1,42 @@
+#แน่นอนครับ โค้ดทั้งหมดผมก๊อปอ.สุริยะ
+services:
+  db:
+    image: mysql:8.0 # ปรับเป็น MySQL 8.0 เพื่อความทันสมัย (หรือใช้ 5.7 ตามเดิมได้หากต้องการ)
+    container_name: mysql_db
+    # MySQL 8.0 ใช้ plugin ตัวใหม่ จึงต้องใช้คำสั่งนี้เพื่อให้เข้ากับ Client รุ่นเก่าได้ดีขึ้น
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: webdb
+    ports:
+      - "8700:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - weblab
+    restart: always
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: db # ใช้ชื่อ Service "db" แทนชื่อ Container เพื่อความยืดหยุ่นในระบบ Network
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+      UPLOAD_LIMIT: 64M # เพิ่มลิมิตการอัปโหลดไฟล์ SQL
+    ports:
+      - "8701:80"
+    depends_on:
+      - db
+    networks:
+      - weblab
+    restart: always
+
+networks:
+  weblab:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
