@@ -32,6 +32,15 @@ services:
     networks:
       - weblab
     restart: always
+  api:
+    build: .
+    container_name: node_api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - weblab
 
 networks:
   weblab:
