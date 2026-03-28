@@ -116,28 +116,41 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 }));
 
 // ─── Rate Limiter (login max 5 ครั้ง/นาที) ────────────────────────────────────
-const loginLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 5,
-    message: {
-        success: false,
-        message: 'Too many login attempts, please try again after 1 minute',
-        timestamp: new Date().toISOString(),
-    },
-});
+const loginLimiter = process.env.NODE_ENV === 'test'
+    ? (req, res, next) => next()
+    : rateLimit({
+        windowMs: 60 * 1000,
+        max: 5,
+        message: {
+            success: false,
+            message: 'Too many login attempts, please try again after 1 minute',
+            timestamp: new Date().toISOString(),
+        },
+    });
 
 // ─── DB Connection ─────────────────────────────────────────────────────────────
 let conn = null;
 
 const initMYSQL = async () => {
-    conn = await mysql.createConnection({
-        host:     process.env.DB_HOST     || 'localhost',
-        user:     process.env.DB_USER     || 'root',
-        password: process.env.DB_PASSWORD || 'root',
-        database: process.env.DB_NAME     || 'webdb',
-        port:     process.env.DB_PORT     || 8700,
-    });
-    console.log('MySQL connected');
+    while (true) {
+        try {
+            conn = await mysql.createConnection({
+                host: process.env.DB_HOST || 'db',
+                user: process.env.DB_USER || 'root',
+                password: process.env.DB_PASSWORD || 'root',
+                database: process.env.DB_NAME || 'webdb',
+                port: process.env.DB_PORT || 3306,
+            });
+
+            console.log('MySQL connected');
+            break;
+
+        } catch (err) {
+            // Node พยายามจะ speedrun แต่ MySQL init ยังไม่เสร็จ Node เลยแตก
+            console.log('Waiting for MySQL... (This may take a while)');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+    }
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -841,9 +854,13 @@ app.use((err, req, res, next) => {
     errorResponse(res, 'Internal server error', 500);
 });
 
-// ─── Start Server ─────────────────────────────────────────────────────────────
-app.listen(port, async () => {
-    await initMYSQL();
-    console.log(`Server running on port ${port}`);
-    console.log(`API Docs: http://localhost:${port}/api-docs`);
-});
+// ─── Start Server (only when run directly, not when imported by tests) ────────
+if (require.main === module) {
+    app.listen(port, async () => {
+        await initMYSQL();
+        console.log(`Server running on port ${port}`);
+        console.log(`API Docs: http://localhost:${port}/api-docs`);
+    });
+}
+
+module.exports = { app, initMYSQL };
