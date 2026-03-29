@@ -14,7 +14,7 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
 const request = require('supertest');
 const mysql   = require('mysql2/promise');
 const bcrypt  = require('bcrypt');
-const { app, initMYSQL } = require('../index');
+const { app, initMYSQL } = require('../src/index');
 
 let conn;
 
