@@ -7,13 +7,13 @@ const { getConn } = require('../db/connection');
 const { authenticate } = require('../middleware/auth.middleware');
 const { validateRegister } = require('../validators/user.validator');
 const { successResponse, errorResponse } = require('../utils/response');
+const { JWT_SECRET,
+        JWT_EXPIRES_IN,
+        JWT_REFRESH_EXPIRES_IN,
+        BCRYPT_ROUNDS
+ } = require('../config/env');
 
 const router = express.Router();
-
-const JWT_SECRET             = process.env.JWT_SECRET             || 'change-me-in-production';
-const JWT_EXPIRES_IN         = process.env.JWT_EXPIRES_IN         || '15m';
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
-const BCRYPT_ROUNDS          = 10;
 
 const loginLimiter = process.env.NODE_ENV === 'test'
     ? (req, res, next) => next()
